@@ -4,7 +4,13 @@
 // Project: Edu Team - Student Record System
 
 session_start();
-$conn = mysqli_connect('localhost', 'root', '', 'student_record_system');
+
+if(!isset($_SESSION['teacher_id'])) {
+    header('Location: ../isha/login.php');
+    exit();
+}
+
+$conn = mysqli_connect('127.0.0.1', 'root', '', 'student_record_system');
 if(!$conn) die('Connection failed: ' . mysqli_connect_error());
 
 $id = isset($_GET['id']) ? (int)$_GET['id'] : 0;

@@ -1,27 +1,40 @@
 <?php
+// student_list.php - Student List Page
+// Developer: Deepa Thapa | SRS-84
+// Project: Edu Team - Student Record System
+
 session_start();
-$_SESSION['teacher_id']=1;
-$_SESSION['teacher_name']='Deepa Thapa';
-$conn=mysqli_connect('127.0.0.1','root','','student_record_system');
-if(!$conn) die('DB Error: '.mysqli_connect_error());
-$teacher_name=$_SESSION['teacher_name'];
-$search=isset($_GET['search'])?mysqli_real_escape_string($conn,trim($_GET['search'])):'';
-$filter=isset($_GET['filter'])?mysqli_real_escape_string($conn,$_GET['filter']):'';
-$per_page=8;
-$page=isset($_GET['page'])&&is_numeric($_GET['page'])?(int)$_GET['page']:1;
-$offset=($page-1)*$per_page;
-$total_all=(int)mysqli_fetch_assoc(mysqli_query($conn,"SELECT COUNT(*) as total FROM student"))['total'];
-$cq="SELECT COUNT(*) as total FROM student s LEFT JOIN course c ON s.course_id=c.course_id WHERE 1=1";
-if($search) $cq.=" AND s.full_name LIKE '%$search%'";
-if($filter) $cq.=" AND s.course_id='$filter'";
-$total_filtered=(int)mysqli_fetch_assoc(mysqli_query($conn,$cq))['total'];
-$total_pages=max(1,ceil($total_filtered/$per_page));
-$query="SELECT s.student_id,s.full_name,s.email,s.enrolled_date,s.course_id,c.course_name FROM student s LEFT JOIN course c ON s.course_id=c.course_id WHERE 1=1";
-if($search) $query.=" AND s.full_name LIKE '%$search%'";
-if($filter) $query.=" AND s.course_id='$filter'";
-$query.=" ORDER BY s.student_id ASC LIMIT $per_page OFFSET $offset";
-$result=mysqli_query($conn,$query);
-$courses_result=mysqli_query($conn,"SELECT course_id,course_name FROM course ORDER BY course_name ASC");
+
+// Redirect to login if not logged in
+if(!isset($_SESSION['teacher_id'])) {
+    header('Location: ../isha/login.php');
+    exit();
+}
+
+$conn = mysqli_connect('127.0.0.1', 'root', '', 'student_record_system');
+if(!$conn) die('DB Error: ' . mysqli_connect_error());
+
+$teacher_name = $_SESSION['teacher_name'] ?? 'Teacher';
+$search = isset($_GET['search']) ? mysqli_real_escape_string($conn, trim($_GET['search'])) : '';
+$filter = isset($_GET['filter']) ? mysqli_real_escape_string($conn, $_GET['filter']) : '';
+$per_page = 8;
+$page     = isset($_GET['page']) && is_numeric($_GET['page']) ? (int)$_GET['page'] : 1;
+$offset   = ($page - 1) * $per_page;
+
+$total_all = (int)mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as total FROM student"))['total'];
+$cq = "SELECT COUNT(*) as total FROM student s LEFT JOIN course c ON s.course_id=c.course_id WHERE 1=1";
+if($search) $cq .= " AND s.full_name LIKE '%$search%'";
+if($filter) $cq .= " AND s.course_id='$filter'";
+$total_filtered = (int)mysqli_fetch_assoc(mysqli_query($conn, $cq))['total'];
+$total_pages    = max(1, ceil($total_filtered / $per_page));
+
+$query = "SELECT s.student_id,s.full_name,s.email,s.enrolled_date,s.course_id,c.course_name FROM student s LEFT JOIN course c ON s.course_id=c.course_id WHERE 1=1";
+if($search) $query .= " AND s.full_name LIKE '%$search%'";
+if($filter) $query .= " AND s.course_id='$filter'";
+$query .= " ORDER BY s.student_id ASC LIMIT $per_page OFFSET $offset";
+$result = mysqli_query($conn, $query);
+$courses_result = mysqli_query($conn, "SELECT course_id,course_name FROM course ORDER BY course_name ASC");
+
 function getInitials($name){$parts=explode(' ',trim($name));$i='';foreach($parts as $p)if($p)$i.=strtoupper($p[0]);return substr($i,0,2);}
 function avatarColor($name){$colors=[['rgba(124,58,237,0.28)','#c4b5fd'],['rgba(59,130,246,0.28)','#93c5fd'],['rgba(16,185,129,0.28)','#6ee7b7'],['rgba(245,158,11,0.28)','#fcd34d'],['rgba(239,68,68,0.28)','#fca5a5'],['rgba(236,72,153,0.28)','#f9a8d4'],['rgba(14,165,233,0.28)','#7dd3fc'],['rgba(168,85,247,0.28)','#d8b4fe']];return $colors[abs(crc32($name))%count($colors)];}
 function courseBadge($name){$n=strtolower($name??'');if(str_contains($n,'computer'))return['#c4b5fd','rgba(124,58,237,0.2)'];if(str_contains($n,'information'))return['#93c5fd','rgba(59,130,246,0.2)'];if(str_contains($n,'software'))return['#6ee7b7','rgba(16,185,129,0.2)'];if(str_contains($n,'data'))return['#fcd34d','rgba(245,158,11,0.2)'];if(str_contains($n,'cyber'))return['#fca5a5','rgba(239,68,68,0.2)'];return['rgba(255,255,255,0.6)','rgba(255,255,255,0.1)'];}
@@ -108,7 +121,7 @@ tbody tr:hover td{background:rgba(124,58,237,0.07)}
 <div class="bg-orb2"></div>
 <nav class="navbar">
 <a class="brand" href="dashboard.php"><div class="brand-logo">E</div><span class="brand-text">Edu Team – Student Record System</span></a>
-<div class="nav-links"><a href="dashboard.php">Dashboard</a><a href="#">Logout</a></div>
+<div class="nav-links"><a href="dashboard.php">Dashboard</a><a href="../isha/logout.php">Logout</a></div>
 </nav>
 <div class="content">
 <div class="welcome-banner">
