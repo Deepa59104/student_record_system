@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Delete Student — Edu Team SRS</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Plus Jakarta Sans',sans-serif;background:#0f0a1e;min-height:100vh;color:white;display:flex;flex-direction:column}
+.bg-orb1{position:fixed;width:600px;height:600px;border-radius:50%;background:radial-gradient(circle,rgba(124,58,237,0.22) 0%,transparent 70%);top:-200px;left:-150px;pointer-events:none}
+.bg-orb2{position:fixed;width:450px;height:450px;border-radius:50%;background:radial-gradient(circle,rgba(59,130,246,0.1) 0%,transparent 70%);bottom:-120px;right:-100px;pointer-events:none}
+.navbar{position:sticky;top:0;z-index:100;padding:0 40px;height:62px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(255,255,255,0.07);background:rgba(15,10,30,0.88);backdrop-filter:blur(14px)}
+.brand{display:flex;align-items:center;gap:12px;text-decoration:none}
+.brand-logo{width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg,#7c3aed,#a855f7);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800;color:white}
+.brand-text{font-size:14px;font-weight:700;color:white}
+.nav-links{display:flex;align-items:center;gap:24px}
+.nav-links a{font-size:13px;font-weight:500;color:rgba(255,255,255,0.45);text-decoration:none}
+.nav-links a:hover{color:white}
+.content{position:relative;z-index:1;max-width:480px;margin:80px auto;padding:0 32px;text-align:center}
+.delete-icon{width:72px;height:72px;border-radius:50%;background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.3);display:flex;align-items:center;justify-content:center;margin:0 auto 24px;font-size:32px}
+.delete-title{font-size:24px;font-weight:800;margin-bottom:12px}
+.delete-sub{font-size:14px;color:rgba(255,255,255,0.5);margin-bottom:32px;line-height:1.6}
+.delete-sub span{color:#f87171;font-weight:600}
+.student-card{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07);border-radius:14px;padding:16px 20px;margin-bottom:28px;display:flex;align-items:center;gap:12px;text-align:left}
+.s-avatar{width:40px;height:40px;border-radius:50%;background:rgba(59,130,246,0.28);color:#93c5fd;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;flex-shrink:0}
+.s-name{font-size:14px;font-weight:600}
+.s-email{font-size:12px;color:rgba(255,255,255,0.4)}
+.actions{display:flex;gap:12px;justify-content:center}
+.btn-cancel{background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);color:rgba(255,255,255,0.6);padding:12px 28px;border-radius:12px;font-size:14px;font-weight:500;text-decoration:none;transition:all 0.2s}
+.btn-cancel:hover{background:rgba(255,255,255,0.09);color:white}
+.btn-delete{background:linear-gradient(135deg,#dc2626,#ef4444);color:white;border:none;padding:12px 28px;border-radius:12px;font-size:14px;font-weight:600;font-family:inherit;cursor:pointer;box-shadow:0 4px 18px rgba(239,68,68,0.3)}
+.btn-delete:hover{opacity:0.88}
+.toast{position:fixed;bottom:24px;right:24px;background:#3a0f0f;border:1px solid rgba(239,68,68,0.3);border-radius:12px;padding:14px 18px;font-size:14px;color:#f87171;transform:translateY(80px);opacity:0;transition:all 0.3s;z-index:300}
+.toast.show{transform:translateY(0);opacity:1}
+</style>
+</head>
+<body>
+<div class="bg-orb1"></div>
+<div class="bg-orb2"></div>
+<nav class="navbar">
+    <a class="brand" href="dashboard.html">
+        <div class="brand-logo">E</div>
+        <span class="brand-text">Edu Team – Student Record System</span>
+    </a>
+    <div class="nav-links">
+        <a href="dashboard.html">Dashboard</a>
+        <a href="#">Logout</a>
+    </div>
+</nav>
+<div class="content">
+    <div class="delete-icon">🗑️</div>
+    <h1 class="delete-title">Delete Student</h1>
+    <p class="delete-sub">Are you sure you want to delete <span>Anisha Thapa</span>?<br>This action cannot be undone.</p>
+    <div class="student-card">
+        <div class="s-avatar">AT</div>
+        <div>
+            <div class="s-name">Anisha Thapa</div>
+            <div class="s-email">anisha@email.com</div>
+        </div>
+    </div>
+    <div class="actions">
+        <a href="student_list.html" class="btn-cancel">Cancel</a>
+        <button class="btn-delete" onclick="deleteStudent()">🗑 Yes, Delete</button>
+    </div>
+</div>
+<div class="toast" id="toast">🗑️ Student deleted successfully!</div>
+<script>
+function deleteStudent(){
+    document.getElementById('toast').classList.add('show');
+    setTimeout(()=>window.location.href='student_list.html',1500);
+}
+</script>
+</body>
+</html>

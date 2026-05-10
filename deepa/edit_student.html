@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Edit Student — Edu Team SRS</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Plus Jakarta Sans',sans-serif;background:#0f0a1e;min-height:100vh;color:white}
+.bg-orb1{position:fixed;width:600px;height:600px;border-radius:50%;background:radial-gradient(circle,rgba(124,58,237,0.22) 0%,transparent 70%);top:-200px;left:-150px;pointer-events:none}
+.bg-orb2{position:fixed;width:450px;height:450px;border-radius:50%;background:radial-gradient(circle,rgba(59,130,246,0.1) 0%,transparent 70%);bottom:-120px;right:-100px;pointer-events:none}
+.navbar{position:sticky;top:0;z-index:100;padding:0 40px;height:62px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(255,255,255,0.07);background:rgba(15,10,30,0.88);backdrop-filter:blur(14px)}
+.brand{display:flex;align-items:center;gap:12px;text-decoration:none}
+.brand-logo{width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg,#7c3aed,#a855f7);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800;color:white}
+.brand-text{font-size:14px;font-weight:700;color:white}
+.nav-links{display:flex;align-items:center;gap:24px}
+.nav-links a{font-size:13px;font-weight:500;color:rgba(255,255,255,0.45);text-decoration:none}
+.nav-links a:hover{color:white}
+.content{position:relative;z-index:1;max-width:680px;margin:0 auto;padding:36px 32px 60px}
+.breadcrumb{margin-bottom:24px}
+.breadcrumb a{font-size:13px;color:rgba(255,255,255,0.5);text-decoration:none}
+.breadcrumb a:hover{color:#a855f7}
+.page-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:28px;flex-wrap:wrap;gap:14px}
+.page-title{font-size:24px;font-weight:800;letter-spacing:-0.5px;margin-bottom:4px}
+.page-sub{font-size:13px;color:rgba(255,255,255,0.3)}
+.student-chip{display:flex;align-items:center;gap:10px;background:rgba(124,58,237,0.15);border:1px solid rgba(168,85,247,0.25);border-radius:12px;padding:10px 16px}
+.chip-avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#7c3aed,#a855f7);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:white}
+.chip-name{font-size:13px;font-weight:600}
+.chip-id{font-size:12px;color:rgba(255,255,255,0.35)}
+.form-card{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07);border-radius:18px;padding:28px}
+.section-label{font-size:11px;font-weight:600;color:rgba(255,255,255,0.3);text-transform:uppercase;letter-spacing:1px;margin-bottom:20px;padding-bottom:12px;border-bottom:1px solid rgba(255,255,255,0.06)}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.form-group{display:flex;flex-direction:column;gap:7px}
+.form-group.full{grid-column:1/-1}
+label{font-size:13px;color:rgba(255,255,255,0.6);font-weight:500}
+label .req{color:#f87171;margin-left:2px}
+input,select{background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:11px 14px;color:white;font-size:13px;font-family:inherit;outline:none;width:100%}
+input::placeholder{color:rgba(255,255,255,0.2)}
+input:focus,select:focus{border-color:rgba(168,85,247,0.6);box-shadow:0 0 0 3px rgba(124,58,237,0.12)}
+select option{background:#1a0d35}
+.form-actions{display:flex;gap:12px;margin-top:28px;flex-wrap:wrap;align-items:center}
+.btn-save{background:linear-gradient(135deg,#7c3aed,#a855f7);color:white;border:none;padding:12px 28px;border-radius:12px;font-size:14px;font-weight:600;font-family:inherit;cursor:pointer}
+.btn-save:hover{opacity:0.88}
+.btn-cancel{background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);color:rgba(255,255,255,0.6);padding:12px 24px;border-radius:12px;font-size:14px;font-weight:500;text-decoration:none}
+.btn-cancel:hover{background:rgba(255,255,255,0.09);color:white}
+.btn-del{background:transparent;border:1px solid rgba(239,68,68,0.35);color:#f87171;padding:12px 20px;border-radius:12px;font-size:14px;cursor:pointer;font-family:inherit;margin-left:auto}
+.btn-del:hover{background:rgba(239,68,68,0.12)}
+.toast{position:fixed;bottom:24px;right:24px;background:#0f3a28;border:1px solid rgba(61,214,140,0.3);border-radius:12px;padding:14px 18px;display:flex;align-items:center;gap:10px;font-size:14px;color:#34d399;transform:translateY(80px);opacity:0;transition:all 0.3s;z-index:300}
+.toast.show{transform:translateY(0);opacity:1}
+@media(max-width:600px){.form-grid{grid-template-columns:1fr}.form-group.full{grid-column:1}.page-header{flex-direction:column}}
+</style>
+</head>
+<body>
+<div class="bg-orb1"></div>
+<div class="bg-orb2"></div>
+<nav class="navbar">
+    <a class="brand" href="dashboard.html">
+        <div class="brand-logo">E</div>
+        <span class="brand-text">Edu Team – Student Record System</span>
+    </a>
+    <div class="nav-links">
+        <a href="dashboard.html">Dashboard</a>
+        <a href="#">Logout</a>
+    </div>
+</nav>
+<div class="content">
+    <div class="breadcrumb"><a href="student_list.html">← Back to Students</a></div>
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">Edit Student</h1>
+            <p class="page-sub">Developer: Deepa Thapa | SRS-84</p>
+        </div>
+        <div class="student-chip">
+            <div class="chip-avatar">AT</div>
+            <div>
+                <div class="chip-name">Anisha Thapa</div>
+                <div class="chip-id">ID: 2</div>
+            </div>
+        </div>
+    </div>
+    <div class="form-card">
+        <div class="section-label">Update Student Details</div>
+        <div class="form-grid">
+            <div class="form-group full">
+                <label>Full Name <span class="req">*</span></label>
+                <input type="text" id="full_name" value="Anisha Thapa">
+            </div>
+            <div class="form-group full">
+                <label>Email Address <span class="req">*</span></label>
+                <input type="email" id="email" value="anisha@email.com">
+            </div>
+            <div class="form-group">
+                <label>Course <span class="req">*</span></label>
+                <select id="course_id">
+                    <option value="">Select a course</option>
+                    <option value="1" selected>Computer Science</option>
+                    <option value="2">Information Technology</option>
+                    <option value="3">Software Engineering</option>
+                    <option value="4">Data Science</option>
+                    <option value="5">Cybersecurity</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Enrolled Date <span class="req">*</span></label>
+                <input type="date" id="enrolled_date" value="2025-09-22">
+            </div>
+        </div>
+        <div class="form-actions">
+            <button class="btn-save" onclick="saveChanges()">✓ Save Changes</button>
+            <a href="student_list.html" class="btn-cancel">Cancel</a>
+            <button class="btn-del" onclick="if(confirm('Delete this student?')) window.location.href='student_list.html'">🗑 Delete</button>
+        </div>
+    </div>
+</div>
+<div class="toast" id="toast">✅ Changes saved! Redirecting...</div>
+<script>
+function saveChanges(){
+    document.getElementById('toast').classList.add('show');
+    setTimeout(()=>window.location.href='student_list.html',1500);
+}
+</script>
+</body>
+</html>
