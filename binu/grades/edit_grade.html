@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Grade</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; background: #f0f0f5; min-height: 100vh; }
+
+        .navbar { background: #4a235a; padding: 14px 24px; display: flex; justify-content: space-between; align-items: center; }
+        .navbar span { color: white; font-size: 16px; font-weight: 500; }
+        .navbar-right { display: flex; align-items: center; gap: 20px; }
+        .navbar-right a { color: #ddd; font-size: 13px; text-decoration: none; }
+        .navbar-right a:hover { color: white; }
+        .avatar { width: 30px; height: 30px; border-radius: 50%; background: #6b3580; display: flex; align-items: center; justify-content: center; color: white; font-size: 12px; font-weight: 500; }
+
+        .content { display: flex; justify-content: center; padding: 40px 24px; }
+        .card { background: white; padding: 40px; border-radius: 12px; width: 520px; border: 1px solid #eee; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+
+        h1 { text-align: center; color: #4a235a; font-size: 22px; margin-bottom: 5px; }
+        .subtitle { text-align: center; color: #999; font-size: 13px; margin-bottom: 25px; }
+
+        .form-group { margin-bottom: 16px; }
+        label { display: block; font-weight: 600; margin-bottom: 5px; color: #333; font-size: 14px; }
+        input { width: 100%; padding: 11px 14px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; outline: none; }
+        input:focus { border-color: #4a235a; }
+        input[readonly] { background: #f8f9fa; color: #888; cursor: not-allowed; }
+
+        .calc-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 20px; margin-top: 16px; }
+        .calc-box { background: #f8f9fa; border: 1px solid #e0e0e0; border-radius: 8px; padding: 10px 14px; text-align: center; }
+        .calc-box label { font-size: 11px; font-weight: 600; color: #666; text-transform: uppercase; letter-spacing: 0.04em; display: block; margin-bottom: 4px; }
+        .calc-box span { font-size: 18px; font-weight: 700; color: #4a235a; }
+
+        .btn-row { display: flex; gap: 10px; }
+        .save-btn { flex: 1; padding: 13px; background: #4a235a; color: white; border: none; border-radius: 8px; font-size: 15px; cursor: pointer; }
+        .save-btn:hover { background: #6b3580; }
+        .back-link { display: block; text-align: center; margin-top: 15px; color: #4a235a; text-decoration: none; font-size: 13px; }
+        .back-link:hover { text-decoration: underline; }
+        .cancel-btn { padding: 13px 20px; background: #eee; color: #444; border: none; border-radius: 8px; font-size: 14px; cursor: pointer; }
+
+        .msg { margin-top: 14px; padding: 10px; border-radius: 8px; font-size: 13px; display: none; text-align: center; }
+        .msg.success { background: #e6f4ea; color: #2d6a2d; }
+        .msg.error   { background: #fdecea; color: #a61c00; }
+
+        .no-id { text-align: center; padding: 40px; color: #999; }
+        .no-id .icon { font-size: 40px; margin-bottom: 12px; }
+    </style>
+</head>
+<body>
+
+<div class="navbar">
+    <span>Edu Team - Student Record System</span>
+    <div class="navbar-right">
+        <a href="teacher_grades.php">Grade Management</a>
+        <a href="student_progress.php">Student Progress</a>
+        <div class="avatar">BK</div>
+    </div>
+</div>
+
+<div class="content">
+    <div class="card">
+        <h1>Edit Grade</h1>
+        <p class="subtitle">Developer: Binu Karki | SRS-137</p>
+        <div id="formBody">
+            <div class="no-id">
+                <div class="icon">⚠️</div>
+                <p>No grade ID provided.<br>Please go back and click Edit on a record.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const gradeId   = urlParams.get('id');
+
+    if (gradeId) {
+        fetch('list.php')
+            .then(r => r.json())
+            .then(data => {
+                const grade = data.find(g => g.grade_id == gradeId);
+                if (!grade) {
+                    document.getElementById('formBody').innerHTML = `<div class="no-id"><div class="icon">❌</div><p>Grade record not found.</p></div>`;
+                    return;
+                }
+                buildForm(grade);
+            });
+    }
+
+    function buildForm(g) {
+        document.getElementById('formBody').innerHTML = `
+            <div class="form-group">
+                <label>Grade ID</label>
+                <input type="text" value="${g.grade_id}" readonly>
+            </div>
+            <div class="form-group">
+                <label>Student ID</label>
+                <input type="text" id="student_id" value="${g.student_id}" readonly>
+            </div>
+            <div class="form-group">
+                <label>Course ID</label>
+                <input type="text" id="course_id" value="${g.course_id}" readonly>
+            </div>
+            <div class="form-group">
+                <label>Mid-Term Score (0–100)</label>
+                <input type="number" id="mid_term" min="0" max="100" step="0.01" value="${g.mid_term}" oninput="calculate()">
+            </div>
+            <div class="form-group">
+                <label>Final Term Score (0–100)</label>
+                <input type="number" id="final_term" min="0" max="100" step="0.01" value="${g.final_term}" oninput="calculate()">
+            </div>
+            <div class="calc-row">
+                <div class="calc-box"><label>Total Grade</label><span id="show_total">${g.total_grade}</span></div>
+                <div class="calc-box"><label>Percentage</label><span id="show_pct">${parseFloat(g.percentage).toFixed(2)}%</span></div>
+                <div class="calc-box"><label>Result</label><span id="show_pass">${g.is_passed==1?'✅ Pass':'❌ Fail'}</span></div>
+            </div>
+            <div class="btn-row">
+                <button class="save-btn" onclick="saveEdit()">Save Changes</button>
+                <button class="cancel-btn" onclick="window.location.href='teacher_grades.php'">Cancel</button>
+            </div>
+            <div class="msg" id="formMsg"></div>
+            <a href="teacher_grades.php" class="back-link">← Back to Grade Management</a>
+        `;
+    }
+
+    function calculate() {
+        const mid   = parseFloat(document.getElementById('mid_term').value);
+        const final = parseFloat(document.getElementById('final_term').value);
+        if (!isNaN(mid) && !isNaN(final)) {
+            const total = mid + final;
+            const pct   = (total/200)*100;
+            document.getElementById('show_total').textContent = total.toFixed(2);
+            document.getElementById('show_pct').textContent   = pct.toFixed(2) + '%';
+            document.getElementById('show_pass').textContent  = pct >= 50 ? '✅ Pass' : '❌ Fail';
+        }
+    }
+
+    function saveEdit() {
+        const mid   = document.getElementById('mid_term').value;
+        const final = document.getElementById('final_term').value;
+        if (!mid || !final || mid < 0 || mid > 100 || final < 0 || final > 100) {
+            alert('Please enter valid scores between 0 and 100.');
+            return;
+        }
+        const data = new FormData();
+        data.append('grade_id',   gradeId);
+        data.append('mid_term',   mid);
+        data.append('final_term', final);
+        fetch('edit.php', { method: 'POST', body: data })
+            .then(r => r.json())
+            .then(res => {
+                const msg = document.getElementById('formMsg');
+                msg.style.display = 'block';
+                if (res.success) {
+                    msg.className = 'msg success';
+                    msg.textContent = '✓ ' + res.success;
+                    setTimeout(() => window.location.href = 'teacher_grades.php', 1500);
+                } else {
+                    msg.className = 'msg error';
+                    msg.textContent = '✗ ' + res.error;
+                }
+            });
+    }
+</script>
+</body>
+</html>

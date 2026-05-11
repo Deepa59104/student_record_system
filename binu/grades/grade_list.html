@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grade List</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; background: #f0f0f5; min-height: 100vh; }
+        .navbar { background: #4a235a; padding: 14px 24px; display: flex; justify-content: space-between; align-items: center; }
+        .navbar span { color: white; font-size: 16px; font-weight: 500; }
+        .navbar-right { display: flex; align-items: center; gap: 20px; }
+        .navbar-right a { color: #ddd; font-size: 13px; text-decoration: none; }
+        .navbar-right a:hover { color: white; }
+        .avatar { width: 30px; height: 30px; border-radius: 50%; background: #6b3580; display: flex; align-items: center; justify-content: center; color: white; font-size: 12px; font-weight: 500; }
+        .container { max-width: 1100px; margin: 30px auto; padding: 0 20px; }
+        .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .page-header h1 { font-size: 22px; color: #4a235a; font-weight: 700; }
+        .btn-add { padding: 10px 20px; background: #4a235a; color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; text-decoration: none; }
+        .btn-add:hover { background: #6b3580; }
+        .card { background: white; border-radius: 12px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); overflow: hidden; }
+        .search-row { display: flex; gap: 12px; align-items: center; padding: 16px 20px; border-bottom: 1px solid #eee; flex-wrap: wrap; }
+        .search-row input { padding: 9px 14px; border: 1.5px solid #ddd; border-radius: 8px; font-size: 14px; width: 240px; }
+        .search-row input:focus { outline: none; border-color: #4a235a; }
+        .search-row select { padding: 9px 14px; border: 1.5px solid #ddd; border-radius: 8px; font-size: 14px; }
+        .search-row select:focus { outline: none; border-color: #4a235a; }
+        .btn-clear { padding: 9px 16px; background: #eee; color: #444; border: none; border-radius: 8px; font-size: 13px; cursor: pointer; }
+        .record-count { font-size: 13px; color: #888; margin-left: auto; }
+        table { width: 100%; border-collapse: collapse; }
+        thead th { background: #f5f0f8; color: #4a235a; font-size: 12px; font-weight: 700; padding: 12px 16px; text-align: left; text-transform: uppercase; letter-spacing: 0.04em; border-bottom: 2px solid #e0d0e8; }
+        tbody td { padding: 13px 16px; font-size: 14px; color: #333; border-bottom: 1px solid #f0f0f0; }
+        tbody tr:hover td { background: #faf7fc; }
+        .empty-row td { text-align: center; color: #999; padding: 50px; font-size: 15px; }
+        .badge { display: inline-block; padding: 3px 12px; border-radius: 12px; font-size: 12px; font-weight: 600; }
+        .pass { background: #e6f4ea; color: #2d6a2d; }
+        .fail { background: #fdecea; color: #a61c00; }
+        .pct { font-weight: 700; }
+        .pct.high { color: #2d6a2d; }
+        .pct.mid  { color: #856404; }
+        .pct.low  { color: #a61c00; }
+        .btn-edit { background: #f0e8f5; color: #4a235a; border: none; padding: 5px 12px; border-radius: 6px; font-size: 12px; cursor: pointer; font-weight: 600; margin-right: 4px; text-decoration: none; display: inline-block; }
+        .btn-edit:hover { background: #4a235a; color: white; }
+        .btn-del { background: #fdecea; color: #a61c00; border: none; padding: 5px 12px; border-radius: 6px; font-size: 12px; cursor: pointer; font-weight: 600; }
+        .btn-del:hover { background: #e74c3c; color: white; }
+    </style>
+</head>
+<body>
+<div class="navbar">
+    <span>Edu Team - Student Record System</span>
+    <div class="navbar-right">
+        <a href="#">Dashboard</a>
+        <a href="teacher_grades.php">Grade Management</a>
+        <a href="student_progress.php">Student Progress</a>
+        <div class="avatar">BK</div>
+    </div>
+</div>
+<div class="container">
+    <div class="page-header">
+        <h1>📋 Grade List</h1>
+        <a href="add_grade.html" class="btn-add">+ Add New Grade</a>
+    </div>
+    <div class="card">
+        <div class="search-row">
+            <input type="text" id="searchInput" placeholder="Search by Student ID or Course..." oninput="filterTable()">
+            <select id="filterResult" onchange="filterTable()">
+                <option value="all">All Results</option>
+                <option value="pass">Passed Only</option>
+                <option value="fail">Failed Only</option>
+            </select>
+            <button class="btn-clear" onclick="clearSearch()">Clear</button>
+            <span class="record-count" id="recordCount">Loading...</span>
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th>#</th><th>Student ID</th><th>Course ID</th>
+                    <th>Mid-Term</th><th>Final Term</th><th>Total</th>
+                    <th>Percentage</th><th>Result</th><th>Action</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody">
+                <tr><td colspan="9" style="text-align:center;padding:40px;color:#999">Loading grades...</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+<script>
+    let allData = [];
+    fetch('grade_list.php')
+        .then(r => r.json())
+        .then(data => { allData = data; renderTable(data); })
+        .catch(() => { document.getElementById('tableBody').innerHTML = '<tr><td colspan="9" style="text-align:center;padding:40px;color:#999">Error loading data.</td></tr>'; });
+
+    function renderTable(data) {
+        const tbody = document.getElementById('tableBody');
+        const count = document.getElementById('recordCount');
+        count.textContent = data.length + ' record' + (data.length !== 1 ? 's' : '');
+        if (data.length === 0) { tbody.innerHTML = '<tr class="empty-row"><td colspan="9">No grade records found.</td></tr>'; return; }
+        tbody.innerHTML = data.map((g, i) => {
+            const pct = parseFloat(g.percentage);
+            const pctClass = pct >= 70 ? 'high' : pct >= 50 ? 'mid' : 'low';
+            return `<tr>
+                <td>${i+1}</td><td><strong>${g.student_id}</strong></td><td>${g.course_id}</td>
+                <td>${parseFloat(g.mid_term).toFixed(2)}</td><td>${parseFloat(g.final_term).toFixed(2)}</td>
+                <td>${parseFloat(g.total_grade).toFixed(2)}</td>
+                <td><span class="pct ${pctClass}">${pct.toFixed(2)}%</span></td>
+                <td><span class="badge ${g.is_passed==1?'pass':'fail'}">${g.is_passed==1?'Passed':'Failed'}</span></td>
+                <td><a href="edit_grade.html?id=${g.grade_id}" class="btn-edit">Edit</a>
+                <button class="btn-del" onclick="deleteGrade(${g.grade_id})">Delete</button></td>
+            </tr>`;
+        }).join('');
+    }
+
+    function filterTable() {
+        const q = document.getElementById('searchInput').value.toLowerCase();
+        const filter = document.getElementById('filterResult').value;
+        renderTable(allData.filter(g => {
+            const matchText = g.student_id.toString().includes(q) || g.course_id.toLowerCase().includes(q);
+            const matchFilter = filter === 'all' ? true : filter === 'pass' ? g.is_passed==1 : g.is_passed==0;
+            return matchText && matchFilter;
+        }));
+    }
+
+    function clearSearch() {
+        document.getElementById('searchInput').value = '';
+        document.getElementById('filterResult').value = 'all';
+        renderTable(allData);
+    }
+
+    function deleteGrade(id) {
+        if (!confirm('Delete this grade record?')) return;
+        fetch('delete_grade.php', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: 'grade_id=' + id })
+        .then(r => r.json())
+        .then(res => { if (res.success) { allData = allData.filter(g => g.grade_id != id); filterTable(); } else alert('Error: ' + res.error); });
+    }
+</script>
+</body>
+</html>

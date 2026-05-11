@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Delete Grade</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; background: #f0f0f5; min-height: 100vh; }
+
+        .navbar { background: #4a235a; padding: 14px 24px; display: flex; justify-content: space-between; align-items: center; }
+        .navbar span { color: white; font-size: 16px; font-weight: 500; }
+        .navbar-right { display: flex; align-items: center; gap: 20px; }
+        .navbar-right a { color: #ddd; font-size: 13px; text-decoration: none; }
+        .navbar-right a:hover { color: white; }
+        .avatar { width: 30px; height: 30px; border-radius: 50%; background: #6b3580; display: flex; align-items: center; justify-content: center; color: white; font-size: 12px; font-weight: 500; }
+
+        .content { display: flex; justify-content: center; padding: 40px 24px; }
+        .card { background: white; padding: 40px; border-radius: 12px; width: 520px; border: 1px solid #eee; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+
+        h1 { text-align: center; color: #4a235a; font-size: 22px; margin-bottom: 5px; }
+        .subtitle { text-align: center; color: #999; font-size: 13px; margin-bottom: 25px; }
+
+        .warning-box { background: #fdecea; border: 1px solid #f5c6c6; border-radius: 8px; padding: 14px 16px; margin-bottom: 20px; font-size: 13px; color: #a61c00; text-align: center; }
+
+        .record-box { background: #f8f9fa; border: 1px solid #e0e0e0; border-radius: 8px; padding: 20px; margin-bottom: 20px; }
+        .record-box-title { font-size: 12px; font-weight: 600; color: #666; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 14px; }
+        .record-row { display: flex; justify-content: space-between; padding: 7px 0; border-bottom: 1px solid #eee; font-size: 14px; }
+        .record-row:last-child { border-bottom: none; }
+        .record-label { color: #666; }
+        .record-value { font-weight: 600; color: #4a235a; }
+
+        .calc-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+        .calc-box { background: #f8f9fa; border: 1px solid #e0e0e0; border-radius: 8px; padding: 10px 14px; text-align: center; }
+        .calc-box label { font-size: 11px; font-weight: 600; color: #666; text-transform: uppercase; letter-spacing: 0.04em; display: block; margin-bottom: 4px; }
+        .calc-box span { font-size: 18px; font-weight: 700; color: #4a235a; }
+
+        .form-group { margin-bottom: 16px; }
+        .form-label { display: block; font-weight: 600; margin-bottom: 5px; color: #333; font-size: 14px; }
+        .form-hint { font-size: 12px; color: #999; margin-bottom: 8px; }
+        .form-hint code { background: #f0f0f5; color: #4a235a; padding: 2px 6px; border-radius: 4px; font-size: 12px; font-weight: 600; }
+
+        input { width: 100%; padding: 11px 14px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; outline: none; }
+        input:focus { border-color: #4a235a; }
+        input::placeholder { color: #bbb; }
+
+        .btn-row { display: flex; gap: 10px; }
+        .delete-btn { flex: 1; padding: 13px; background: #c0392b; color: white; border: none; border-radius: 8px; font-size: 15px; cursor: pointer; opacity: 0.5; pointer-events: none; }
+        .delete-btn.ready { opacity: 1; pointer-events: all; }
+        .delete-btn.ready:hover { background: #a93226; }
+        .cancel-btn { padding: 13px 20px; background: #eee; color: #444; border: none; border-radius: 8px; font-size: 14px; cursor: pointer; }
+        .cancel-btn:hover { background: #ddd; }
+
+        .back-link { display: block; text-align: center; margin-top: 15px; color: #4a235a; text-decoration: none; font-size: 13px; }
+        .back-link:hover { text-decoration: underline; }
+
+        .msg { margin-top: 14px; padding: 10px; border-radius: 8px; font-size: 13px; display: none; text-align: center; }
+        .msg.success { background: #e6f4ea; color: #2d6a2d; }
+        .msg.error   { background: #fdecea; color: #a61c00; }
+    </style>
+</head>
+<body>
+
+<div class="navbar">
+    <span>Edu Team - Student Record System</span>
+    <div class="navbar-right">
+        <a href="teacher_grades.php">Grade Management</a>
+        <a href="student_progress.php">Student Progress</a>
+        <div class="avatar">BK</div>
+    </div>
+</div>
+
+<div class="content">
+    <div class="card">
+        <h1>Delete Grade</h1>
+        <p class="subtitle">Developer: Binu Karki | SRS-138</p>
+
+        <div class="warning-box">
+            ⚠️ This action is permanent and cannot be undone.
+        </div>
+
+        <div class="record-box">
+            <div class="record-box-title">Grade Record to be Deleted</div>
+            <div class="record-row">
+                <span class="record-label">Grade ID</span>
+                <span class="record-value" id="show_id">GRD-002</span>
+            </div>
+            <div class="record-row">
+                <span class="record-label">Student ID</span>
+                <span class="record-value" id="show_student">1043</span>
+            </div>
+            <div class="record-row">
+                <span class="record-label">Course ID</span>
+                <span class="record-value" id="show_course">SCI101</span>
+            </div>
+            <div class="record-row">
+                <span class="record-label">Mid-Term Score</span>
+                <span class="record-value" id="show_mid">38</span>
+            </div>
+            <div class="record-row">
+                <span class="record-label">Final Term Score</span>
+                <span class="record-value" id="show_final">40</span>
+            </div>
+        </div>
+
+        <div class="calc-row">
+            <div class="calc-box"><label>Total Grade</label><span id="show_total">78.00</span></div>
+            <div class="calc-box"><label>Percentage</label><span id="show_pct">39.00%</span></div>
+            <div class="calc-box"><label>Result</label><span id="show_pass">❌ Fail</span></div>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Confirm Deletion</label>
+            <div class="form-hint">Type <code id="confirmCode">GRD-002</code> to enable the delete button</div>
+            <input type="text" id="confirmInput" placeholder="Type the Grade ID here" oninput="checkConfirm()">
+        </div>
+
+        <div class="btn-row">
+            <button class="delete-btn" id="deleteBtn" onclick="deleteGrade()">🗑️ Delete Grade</button>
+            <button class="cancel-btn" onclick="window.location.href='teacher_grades.php'">Cancel</button>
+        </div>
+
+        <div class="msg" id="formMsg"></div>
+        <a href="teacher_grades.php" class="back-link">← Back to Grade Management</a>
+    </div>
+</div>
+
+<script>
+    const gradeId = 'GRD-002';
+
+    function checkConfirm() {
+        const val = document.getElementById('confirmInput').value.trim();
+        const btn = document.getElementById('deleteBtn');
+        if (val === gradeId) {
+            btn.classList.add('ready');
+        } else {
+            btn.classList.remove('ready');
+        }
+    }
+
+    function deleteGrade() {
+        const msg = document.getElementById('formMsg');
+        msg.style.display = 'block';
+        msg.className = 'msg success';
+        msg.textContent = '✓ Grade record deleted successfully.';
+        setTimeout(() => {
+            window.location.href = 'teacher_grades.php';
+        }, 2000);
+    }
+</script>
+</body>
+</html>
