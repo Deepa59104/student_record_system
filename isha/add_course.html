@@ -3,7 +3,10 @@
 <head>
     <title>Add New Course</title>
     <style>
+        /* Reset default browser margins and padding */
         * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        /* Main body styling - light grey background, full height */
         body {
             font-family: Arial, sans-serif;
             background: #f0f0f5;
@@ -11,6 +14,8 @@
             flex-direction: column;
             min-height: 100vh;
         }
+
+        /* Navigation bar - dark purple background */
         .navbar {
             background: #4a235a;
             padding: 14px 24px;
@@ -18,9 +23,17 @@
             justify-content: space-between;
             align-items: center;
         }
+
+        /* Navbar title text */
         .navbar span { color: white; font-size: 16px; font-weight: 500; }
+
+        /* Right side of navbar - links and avatar */
         .navbar-right { display: flex; align-items: center; gap: 20px; }
+
+        /* Navigation links styling */
         .navbar-right a { color: #ddd; font-size: 13px; text-decoration: none; }
+
+        /* User avatar circle - top right corner */
         .avatar {
             width: 30px; height: 30px;
             border-radius: 50%;
@@ -29,6 +42,8 @@
             justify-content: center;
             color: white; font-size: 12px; font-weight: 500;
         }
+
+        /* Main content area - centres the form card */
         .content {
             flex: 1;
             display: flex;
@@ -36,6 +51,8 @@
             align-items: center;
             padding: 40px 24px;
         }
+
+        /* White card container for the form */
         .card {
             background: white;
             padding: 40px;
@@ -43,78 +60,115 @@
             width: 480px;
             border: 1px solid #eee;
         }
+
+        /* Page heading - Add New Course */
         h1 { text-align: center; color: #4a235a;
              font-size: 22px; margin-bottom: 5px; }
+
+        /* Developer and task reference subtitle */
         .subtitle { text-align: center; color: #999;
                     font-size: 13px; margin-bottom: 25px; }
+
+        /* Form field labels */
         label { display: block; font-weight: 500;
                 margin-bottom: 5px; color: #333; font-size: 14px; }
+
+        /* Input fields and dropdown styling */
         input, select {
             width: 100%; padding: 11px 14px;
             border: 1px solid #ddd; border-radius: 8px;
             font-size: 14px; margin-bottom: 15px; outline: none;
         }
+
+        /* Highlight border when field is selected */
         input:focus, select:focus { border-color: #4a235a; }
+
+        /* Placeholder text colour */
         input::placeholder { color: #bbb; }
+
+        /* Submit button styling */
         .save-btn {
             width: 100%; padding: 13px;
             background: #4a235a; color: white;
             border: none; border-radius: 8px;
             font-size: 15px; cursor: pointer; margin-top: 5px;
         }
+
+        /* Button hover effect - lighter purple */
         .save-btn:hover { background: #6b3580; }
+
+        /* Back link below the button */
         .back-link {
             display: block; text-align: center;
             margin-top: 15px; color: #4a235a;
             text-decoration: none; font-size: 13px;
         }
+
+        /* Error message styling - shown in red below each field */
         .error { color: red; font-size: 12px;
                  margin-top: -10px; margin-bottom: 10px;
                  display: block; }
     </style>
 </head>
 <body>
+    <!-- Navigation Bar -->
     <div class="navbar">
         <span>Student Record System</span>
         <div class="navbar-right">
+            <!-- Links to other modules -->
             <a href="../sita/dashboard.html">Dashboard</a>
             <a href="../deepa/student_list.html">Students</a>
             <a href="course_list.html">Courses</a>
             <a href="login.html">Logout</a>
+            <!-- User avatar initials -->
             <div class="avatar">ID</div>
         </div>
     </div>
 
+    <!-- Main Content - Add Course Form -->
     <div class="content">
         <div class="card">
             <h1>Add New Course</h1>
+            <!-- Developer name and Jira task reference -->
             <p class="subtitle">Developer: Isha | SRS-40</p>
 
+            <!-- Form calls validateForm() on submit -->
             <form onsubmit="validateForm(event)">
+
+                <!-- Course Name input field -->
                 <label>Course Name:</label>
                 <input type="text" id="course_name"
                        placeholder="Enter course name" required>
+                <!-- Error message shown if course name is empty -->
                 <span class="error" id="course_name_error"></span>
 
+                <!-- Course Code input field -->
                 <label>Course Code:</label>
                 <input type="text" id="course_code"
                        placeholder="Enter course code e.g CS101" required>
+                <!-- Error message shown if course code is empty -->
                 <span class="error" id="course_code_error"></span>
 
+                <!-- Teacher ID input field - links course to teacher -->
                 <label>Teacher ID:</label>
                 <input type="number" id="teacher_id"
                        placeholder="Enter teacher ID" required>
+                <!-- Error message shown if teacher ID is empty -->
                 <span class="error" id="teacher_id_error"></span>
 
+                <!-- Status dropdown - Active or Inactive -->
                 <label>Status:</label>
                 <select id="is_active">
                     <option value="1">Active</option>
                     <option value="0">Inactive</option>
                 </select>
 
+                <!-- Submit button to add the course -->
                 <button type="submit" class="save-btn">
                     Add Course
                 </button>
+
+                <!-- Back link to return to course list -->
                 <a href="course_list.html" class="back-link">
                     ← Back to All Courses
                 </a>
@@ -123,43 +177,57 @@
     </div>
 
     <script>
+        // validateForm() - validates all fields before submitting the form
         function validateForm(event) {
+            // Prevent the form from submitting automatically
             event.preventDefault();
+
+            // Flag to track if all fields are valid
             let valid = true;
 
+            // Check if Course Name field is empty
             let courseName = document.getElementById(
                 'course_name').value;
             if(courseName === '') {
+                // Show error message if empty
                 document.getElementById('course_name_error')
                 .textContent = 'Course name is required!';
                 valid = false;
             } else {
+                // Clear error message if field is filled
                 document.getElementById('course_name_error')
                 .textContent = '';
             }
 
+            // Check if Course Code field is empty
             let courseCode = document.getElementById(
                 'course_code').value;
             if(courseCode === '') {
+                // Show error message if empty
                 document.getElementById('course_code_error')
                 .textContent = 'Course code is required!';
                 valid = false;
             } else {
+                // Clear error message if field is filled
                 document.getElementById('course_code_error')
                 .textContent = '';
             }
 
+            // Check if Teacher ID field is empty
             let teacherId = document.getElementById(
                 'teacher_id').value;
             if(teacherId === '') {
+                // Show error message if empty
                 document.getElementById('teacher_id_error')
                 .textContent = 'Teacher ID is required!';
                 valid = false;
             } else {
+                // Clear error message if field is filled
                 document.getElementById('teacher_id_error')
                 .textContent = '';
             }
 
+            // If all fields are valid, show success and redirect to course list
             if(valid) {
                 alert('Course added successfully!');
                 window.location = 'course_list.html';

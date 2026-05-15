@@ -1,147 +1,192 @@
 <?php
-// add_student.php - Add New Student
-// Developer: Deepa Thapa | SRS-84
-// Project: Edu Team - Student Record System
+/**
+ * ============================================================
+ * FILE:        add_student.php
+ * MODULE:      Student Profile Management
+ * DEVELOPER:   Deepa Thapa | SRS-84
+ * PROJECT:     Edu Team – Student Record System
+ * LAYER:       Presentation + Middle + Data Layer
+ * DESCRIPTION: Form to add a new student to the database.
+ *              Validates all inputs before inserting.
+ *              Teacher dropdown pulls from Sita's teachers table.
+ *              Course stored as VARCHAR name (not ID number).
+ * ============================================================
+ */
 
+// ── MIDDLE LAYER: Start session + access control ──────────────
+// Uses student_teacher_id (not teacher_id) to avoid clash with Isha's session
 session_start();
-
-if(!isset($_SESSION['teacher_id'])) {
-    header('Location: ../isha/login.php');
-    exit();
+if (!isset($_SESSION['student_teacher_id'])) {
+    header('Location: student_login.php'); exit();
 }
 
-$conn = mysqli_connect('127.0.0.1', 'root', '', 'student_record_system');
-if(!$conn) die('Connection failed: ' . mysqli_connect_error());
+// ── DATA LAYER: Database connection ──────────────────────────
+require_once '../db.php';
 
 $errors = [];
-$old    = [];
 
-if($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $old['full_name']     = trim(mysqli_real_escape_string($conn, $_POST['full_name'] ?? ''));
-    $old['email']         = trim(mysqli_real_escape_string($conn, $_POST['email'] ?? ''));
-    $old['course_id']     = (int)($_POST['course_id'] ?? 0);
-    $old['enrolled_date'] = trim(mysqli_real_escape_string($conn, $_POST['enrolled_date'] ?? ''));
+// ── MIDDLE LAYER: Process form on POST ───────────────────────
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
-    if(empty($old['full_name']))    $errors['full_name']     = 'Full name is required';
-    if(empty($old['email']))        $errors['email']          = 'Email is required';
-    elseif(!filter_var($old['email'], FILTER_VALIDATE_EMAIL)) $errors['email'] = 'Invalid email address';
-    if($old['course_id'] <= 0)      $errors['course_id']     = 'Please select a course';
-    if(empty($old['enrolled_date'])) $errors['enrolled_date'] = 'Enrolled date is required';
+    $full_name     = trim($_POST['full_name'] ?? '');
+    $email         = trim($_POST['email'] ?? '');
+    $course        = trim($_POST['course'] ?? '');
+    $teacher_id    = intval($_POST['teacher_id'] ?? 0);
+    $enrolled_date = trim($_POST['enrolled_date'] ?? '');
+    $password      = trim($_POST['password'] ?? '');
 
-    if(empty($errors['email'])) {
-        $check = mysqli_query($conn, "SELECT student_id FROM student WHERE email='{$old['email']}'");
-        if(mysqli_num_rows($check) > 0) $errors['email'] = 'Email already registered';
+    // VALIDATE: Required fields
+    if (empty($full_name))     $errors[] = 'Full name is required.';
+    if (empty($email))         $errors[] = 'Email address is required.';
+    if (empty($course))        $errors[] = 'Please select a course.';
+    if ($teacher_id === 0)     $errors[] = 'Please select a teacher.';
+    if (empty($enrolled_date)) $errors[] = 'Enrolled date is required.';
+    if (empty($password))      $errors[] = 'Password is required.';
+    if (!empty($password) && strlen($password) < 6) $errors[] = 'Password must be at least 6 characters.';
+
+    // VALIDATE: Check duplicate email
+    if (empty($errors)) {
+        $chk = mysqli_query($conn, "SELECT student_id FROM students WHERE email='" . mysqli_real_escape_string($conn,$email) . "'");
+        if (mysqli_num_rows($chk) > 0) $errors[] = 'This email is already registered.';
     }
 
-    if(empty($errors)) {
-        $q = "INSERT INTO student (full_name, email, teacher_id, course_id, enrolled_date)
-              VALUES ('{$old['full_name']}', '{$old['email']}', {$_SESSION['teacher_id']}, {$old['course_id']}, '{$old['enrolled_date']}')";
-        if(mysqli_query($conn, $q)) {
-            header('Location: student_list.php?success=Student added successfully!');
-            exit();
+    // DATA LAYER: Insert into students table
+    if (empty($errors)) {
+        $hashed = md5($password);
+        $sql = "INSERT INTO students (full_name, email, course, teacher_id, enrolled_date, password)
+                VALUES ('" . mysqli_real_escape_string($conn,$full_name) . "',
+                        '" . mysqli_real_escape_string($conn,$email) . "',
+                        '" . mysqli_real_escape_string($conn,$course) . "',
+                        $teacher_id,
+                        '" . mysqli_real_escape_string($conn,$enrolled_date) . "',
+                        '$hashed')";
+        if (mysqli_query($conn,$sql)) {
+            header('Location: student_list.php?success=Student added successfully!'); exit();
         } else {
-            $errors['general'] = 'Something went wrong. Please try again.';
+            $errors[] = 'Database error: ' . mysqli_error($conn);
         }
     }
 }
 
-$courses = mysqli_query($conn, "SELECT course_id, course_name FROM course ORDER BY course_name ASC");
+// DATA LAYER: Get teachers from Sita's table
+$tr       = mysqli_query($conn, "SELECT teacher_id, CONCAT(first_name,' ',last_name) AS full_name FROM teachers WHERE is_active=1 ORDER BY first_name ASC");
+$teachers = $tr ? mysqli_fetch_all($tr, MYSQLI_ASSOC) : [];
+
+$courses = ['Computer Science','Software Engineering','Data Science','Information Technology','Cybersecurity'];
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Add Student — Edu Team SRS</title>
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<style>
-*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
-body{font-family:'Plus Jakarta Sans',sans-serif;background:#0f0a1e;min-height:100vh;color:white}
-.bg-orb1{position:fixed;width:600px;height:600px;border-radius:50%;background:radial-gradient(circle,rgba(124,58,237,0.22) 0%,transparent 70%);top:-200px;left:-150px;pointer-events:none}
-.bg-orb2{position:fixed;width:450px;height:450px;border-radius:50%;background:radial-gradient(circle,rgba(59,130,246,0.1) 0%,transparent 70%);bottom:-120px;right:-100px;pointer-events:none}
-.navbar{position:sticky;top:0;z-index:100;padding:0 40px;height:62px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(255,255,255,0.07);background:rgba(15,10,30,0.88);backdrop-filter:blur(14px)}
-.brand{display:flex;align-items:center;gap:12px;text-decoration:none}
-.brand-logo{width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg,#7c3aed,#a855f7);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800;color:white}
-.brand-text{font-size:14px;font-weight:700;color:white}
-.nav-links{display:flex;align-items:center;gap:24px}
-.nav-links a{font-size:13px;font-weight:500;color:rgba(255,255,255,0.45);text-decoration:none}
-.nav-links a:hover{color:white}
-.content{position:relative;z-index:1;max-width:680px;margin:0 auto;padding:36px 32px 60px}
-.breadcrumb{margin-bottom:24px}
-.breadcrumb a{font-size:13px;color:rgba(255,255,255,0.5);text-decoration:none}
-.breadcrumb a:hover{color:#a855f7}
-.page-title{font-size:24px;font-weight:800;letter-spacing:-0.5px;margin-bottom:4px}
-.page-sub{font-size:13px;color:rgba(255,255,255,0.3);margin-bottom:28px}
-.alert-error-box{background:rgba(239,68,68,0.12);border:1px solid rgba(239,68,68,0.3);color:#f87171;padding:12px 16px;border-radius:12px;margin-bottom:20px;font-size:13px}
-.form-card{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07);border-radius:18px;padding:28px}
-.section-label{font-size:11px;font-weight:600;color:rgba(255,255,255,0.3);text-transform:uppercase;letter-spacing:1px;margin-bottom:20px;padding-bottom:12px;border-bottom:1px solid rgba(255,255,255,0.06)}
-.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
-.form-group{display:flex;flex-direction:column;gap:7px}
-.form-group.full{grid-column:1/-1}
-label{font-size:13px;color:rgba(255,255,255,0.6);font-weight:500}
-label .req{color:#f87171;margin-left:2px}
-input,select{background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:11px 14px;color:white;font-size:13px;font-family:inherit;outline:none;width:100%}
-input::placeholder{color:rgba(255,255,255,0.2)}
-input:focus,select:focus{border-color:rgba(168,85,247,0.6);box-shadow:0 0 0 3px rgba(124,58,237,0.12)}
-input.is-error,select.is-error{border-color:rgba(239,68,68,0.6)}
-select option{background:#1a0d35}
-.field-error{font-size:12px;color:#f87171}
-.form-actions{display:flex;gap:12px;margin-top:28px}
-.btn-add{background:linear-gradient(135deg,#7c3aed,#a855f7);color:white;border:none;padding:12px 28px;border-radius:12px;font-size:14px;font-weight:600;font-family:inherit;cursor:pointer}
-.btn-add:hover{opacity:0.88}
-.btn-cancel{background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);color:rgba(255,255,255,0.6);padding:12px 24px;border-radius:12px;font-size:14px;font-weight:500;text-decoration:none}
-.btn-cancel:hover{background:rgba(255,255,255,0.09);color:white}
-@media(max-width:600px){.form-grid{grid-template-columns:1fr}.form-group.full{grid-column:1}}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Student – Edu Team</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background: #f3effe; min-height: 100vh; display: flex; flex-direction: column; }
+        .navbar { height: 56px; background: #3b1f6e; display: flex; align-items: center; padding: 0 40px; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+        .brand { display: flex; align-items: center; gap: 12px; text-decoration: none; }
+        .brand-logo { width: 36px; height: 36px; border-radius: 50%; background: rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center; font-size: 18px; color: white; }
+        .brand-text { color: #fff; font-size: 15px; font-weight: 700; }
+        .nav-links { display: flex; gap: 24px; }
+        .nav-links a { color: rgba(255,255,255,0.65); font-size: 13px; text-decoration: none; font-weight: 500; }
+        .nav-links a:hover { color: white; }
+        .nav-links a.danger { color: #fca5a5; }
+        .main { flex: 1; padding: 40px 32px 60px; max-width: 720px; margin: 0 auto; width: 100%; }
+        .back-link { display: inline-flex; align-items: center; gap: 6px; color: #9b8bb8; font-size: 13px; text-decoration: none; margin-bottom: 28px; }
+        .back-link:hover { color: #3b1f6e; }
+        .page-title { font-size: 28px; font-weight: 800; color: #2d1657; margin-bottom: 6px; }
+        .page-sub { font-size: 14px; color: #9b8bb8; margin-bottom: 32px; }
+        .form-card { background: #fff; border: 1.5px solid #e2d9f3; border-radius: 20px; padding: 32px; box-shadow: 0 4px 24px rgba(59,31,110,0.07); }
+        .sec-label { font-size: 11px; font-weight: 700; color: #9b8bb8; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 20px; padding-bottom: 12px; border-bottom: 1px solid #f0eaf8; }
+        .error-box { background: #fde8f0; border: 1px solid #f0b8d0; border-radius: 10px; padding: 12px 16px; font-size: 13px; color: #8b1a42; margin-bottom: 24px; }
+        .error-box ul { margin: 6px 0 0 18px; line-height: 1.8; }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        .form-group { margin-bottom: 20px; }
+        .form-label { display: block; font-size: 13px; font-weight: 600; color: #2d1657; margin-bottom: 8px; }
+        .req { color: #ef4444; }
+        .form-input, .form-select { width: 100%; height: 46px; padding: 0 14px; border: 1.5px solid #e2d9f3; border-radius: 10px; font-family: 'Plus Jakarta Sans', sans-serif; font-size: 14px; color: #2d1657; background: #faf8ff; outline: none; transition: border-color .2s; }
+        .form-input:focus, .form-select:focus { border-color: #3b1f6e; box-shadow: 0 0 0 3px rgba(59,31,110,0.08); background: #fff; }
+        .form-input::placeholder { color: #c4b8e0; }
+        .form-select option { background: #fff; color: #2d1657; }
+        .hint { font-size: 11px; color: #9b8bb8; margin-top: 5px; }
+        .divider { border: none; border-top: 1px solid #f0eaf8; margin: 24px 0; }
+        .form-actions { display: flex; gap: 12px; margin-top: 8px; }
+        .btn-add { flex: 1; height: 48px; background: #3b1f6e; color: white; border: none; border-radius: 10px; font-family: 'Plus Jakarta Sans', sans-serif; font-size: 15px; font-weight: 700; cursor: pointer; transition: background .2s; }
+        .btn-add:hover { background: #4e2b8f; }
+        .btn-cancel { flex: 1; height: 48px; background: #f3effe; color: #3b1f6e; border: 1.5px solid #e2d9f3; border-radius: 10px; font-family: 'Plus Jakarta Sans', sans-serif; font-size: 15px; font-weight: 600; text-decoration: none; display: flex; align-items: center; justify-content: center; }
+        .btn-cancel:hover { background: #e8d9f8; }
+    </style>
 </head>
 <body>
-<div class="bg-orb1"></div>
-<div class="bg-orb2"></div>
 <nav class="navbar">
-<a class="brand" href="dashboard.php"><div class="brand-logo">E</div><span class="brand-text">Edu Team – Student Record System</span></a>
-<div class="nav-links"><a href="dashboard.php">Dashboard</a><a href="../isha/logout.php">Logout</a></div>
+    <a class="brand" href="dashboard.php">
+        <div class="brand-logo">🎓</div>
+        <span class="brand-text">EduTeam</span>
+    </a>
+    <div class="nav-links">
+        <a href="student_list.php">Students</a>
+        <a href="student_logout.php" class="danger">Logout</a>
+    </div>
 </nav>
-<div class="content">
-<div class="breadcrumb"><a href="student_list.php">← Back to Students</a></div>
-<h1 class="page-title">Add New Student</h1>
-<p class="page-sub">Developer: Deepa Thapa | SRS-84</p>
-<?php if(isset($errors['general'])): ?><div class="alert-error-box"><?php echo $errors['general']; ?></div><?php endif; ?>
-<div class="form-card">
-<div class="section-label">Student Details</div>
-<form method="POST" action="add_student.php">
-<div class="form-grid">
-<div class="form-group full">
-<label>Full Name <span class="req">*</span></label>
-<input type="text" name="full_name" placeholder="e.g. John Smith" value="<?php echo htmlspecialchars($old['full_name'] ?? ''); ?>" class="<?php echo isset($errors['full_name'])?'is-error':''; ?>">
-<?php if(isset($errors['full_name'])): ?><span class="field-error"><?php echo $errors['full_name']; ?></span><?php endif; ?>
-</div>
-<div class="form-group full">
-<label>Email Address <span class="req">*</span></label>
-<input type="email" name="email" placeholder="student@email.com" value="<?php echo htmlspecialchars($old['email'] ?? ''); ?>" class="<?php echo isset($errors['email'])?'is-error':''; ?>">
-<?php if(isset($errors['email'])): ?><span class="field-error"><?php echo $errors['email']; ?></span><?php endif; ?>
-</div>
-<div class="form-group">
-<label>Course <span class="req">*</span></label>
-<select name="course_id" class="<?php echo isset($errors['course_id'])?'is-error':''; ?>">
-<option value="">Select a course</option>
-<?php while($c=mysqli_fetch_assoc($courses)): ?>
-<option value="<?php echo $c['course_id']; ?>" <?php echo (isset($old['course_id'])&&$old['course_id']==$c['course_id'])?'selected':''; ?>><?php echo htmlspecialchars($c['course_name']); ?></option>
-<?php endwhile; ?>
-</select>
-<?php if(isset($errors['course_id'])): ?><span class="field-error"><?php echo $errors['course_id']; ?></span><?php endif; ?>
-</div>
-<div class="form-group">
-<label>Enrolled Date <span class="req">*</span></label>
-<input type="date" name="enrolled_date" value="<?php echo htmlspecialchars($old['enrolled_date'] ?? ''); ?>" max="<?php echo date('Y-m-d'); ?>" class="<?php echo isset($errors['enrolled_date'])?'is-error':''; ?>">
-<?php if(isset($errors['enrolled_date'])): ?><span class="field-error"><?php echo $errors['enrolled_date']; ?></span><?php endif; ?>
-</div>
-</div>
-<div class="form-actions">
-<button type="submit" class="btn-add">+ Add Student</button>
-<a href="student_list.php" class="btn-cancel">Cancel</a>
-</div>
-</form>
-</div>
+<div class="main">
+    <a href="student_list.php" class="back-link">← Back to Students</a>
+    <h1 class="page-title">Add New Student</h1>
+    <p class="page-sub">Developer: Deepa Thapa | SRS-84</p>
+    <div class="form-card">
+        <div class="sec-label">Student Details</div>
+        <?php if (!empty($errors)): ?>
+        <div class="error-box">⚠️ Please fix the following:
+            <ul><?php foreach($errors as $e): ?><li><?= htmlspecialchars($e) ?></li><?php endforeach; ?></ul>
+        </div>
+        <?php endif; ?>
+        <form method="POST" action="add_student.php">
+            <div class="form-group">
+                <label class="form-label">Full Name <span class="req">*</span></label>
+                <input class="form-input" type="text" name="full_name" placeholder="e.g. John Smith" value="<?= htmlspecialchars($_POST['full_name']??'') ?>" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Email Address <span class="req">*</span></label>
+                <input class="form-input" type="email" name="email" placeholder="student@email.com" value="<?= htmlspecialchars($_POST['email']??'') ?>" required>
+                <div class="hint">Must be unique — used for student login</div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">Course <span class="req">*</span></label>
+                    <select class="form-select" name="course" required>
+                        <option value="">Select a course</option>
+                        <?php foreach($courses as $c): ?>
+                        <option value="<?= $c ?>" <?= ($_POST['course']??'')===$c?'selected':'' ?>><?= $c ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Enrolled Date <span class="req">*</span></label>
+                    <input class="form-input" type="date" name="enrolled_date" value="<?= htmlspecialchars($_POST['enrolled_date']??'') ?>" required>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Assign Teacher <span class="req">*</span> <span style="font-size:11px;color:#9b8bb8;font-weight:400">— Sita's module</span></label>
+                <select class="form-select" name="teacher_id" required>
+                    <option value="">Select a teacher</option>
+                    <?php foreach($teachers as $t): ?>
+                    <option value="<?= $t['teacher_id'] ?>" <?= ($_POST['teacher_id']??'')==$t['teacher_id']?'selected':'' ?>><?= htmlspecialchars($t['full_name']) ?></option>
+                    <?php endforeach; ?>
+                </select>
+                <div class="hint">Teachers pulled from Sita Subedi's Teacher module</div>
+            </div>
+            <div class="divider"></div>
+            <div class="form-group">
+                <label class="form-label">Login Password <span class="req">*</span></label>
+                <input class="form-input" type="password" name="password" placeholder="Minimum 6 characters" required>
+                <div class="hint">Student uses this to log in</div>
+            </div>
+            <div class="form-actions">
+                <button type="submit" class="btn-add">+ Add Student</button>
+                <a href="student_list.php" class="btn-cancel">Cancel</a>
+            </div>
+        </form>
+    </div>
 </div>
 </body>
 </html>
