@@ -1,5 +1,5 @@
 <?php
-// add_course.php - Add Course Page
+// edit_course.php - Edit Course Page
 // Developer: Isha | SRS-86
 // Project: Edu Team - Student Record System
 
@@ -21,13 +21,29 @@ $teacher_name = $teacher_row
     : ($_SESSION['teacher_name'] ?? 'Isha');
 $_SESSION['teacher_name'] = $teacher_name;
 
-$errors         = [];
-$success        = '';
-$course_name    = '';
-$course_code    = '';
-$description    = '';
-$duration_weeks = '';
-$status         = 'active';
+$errors  = [];
+$success = '';
+
+$id = intval($_GET['id'] ?? 0);
+if ($id <= 0) { header("Location: course_list.php"); exit(); }
+
+// Fetch existing course data including duration_weeks and description
+$row = mysqli_fetch_assoc(mysqli_query($conn,
+    "SELECT course_name, course_code, description, duration_weeks, is_active FROM course WHERE course_id = $id"
+));
+if (!$row) { header("Location: course_list.php"); exit(); }
+
+$course_name    = $row['course_name'];
+$course_code    = $row['course_code'];
+$description    = $row['description'] ?? '';
+$duration_weeks = $row['duration_weeks'] ?? '';
+$status         = $row['is_active'] ? 'active' : 'inactive';
+
+// Fetch enrolled student count for display using student.course_id
+$enroll_row     = mysqli_fetch_assoc(mysqli_query($conn,
+    "SELECT COUNT(*) as cnt FROM student WHERE course_id = $id"
+));
+$enrolled_count = (int)($enroll_row['cnt'] ?? 0);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $course_name    = trim($_POST['course_name'] ?? '');
@@ -36,7 +52,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $duration_weeks = trim($_POST['duration_weeks'] ?? '');
     $status         = $_POST['status'] ?? 'active';
 
-    // Validation
     if (empty($course_name)) {
         $errors[] = 'Course name is required.';
     } elseif (strlen($course_name) > 100) {
@@ -49,7 +64,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $errors[] = 'Course code must be 2–10 uppercase letters/digits (e.g. CS101).';
     }
 
-    // Duration validation - optional but must be positive integer if provided
     if ($duration_weeks !== '') {
         if (!is_numeric($duration_weeks) || (int)$duration_weeks < 1 || (int)$duration_weeks > 200) {
             $errors[] = 'Duration must be a number between 1 and 200 weeks.';
@@ -57,42 +71,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $duration_weeks = (int)$duration_weeks;
         }
     } else {
-        $duration_weeks = null; // NULL stored if not set
+        $duration_weeks = null;
     }
 
     if (!in_array($status, ['active', 'inactive'])) {
         $errors[] = 'Invalid status value.';
     }
 
-    // Check for duplicate course code
+    // Duplicate check excluding current course
     if (empty($errors)) {
-        $check = mysqli_prepare($conn, "SELECT course_id FROM course WHERE course_code = ?");
-        mysqli_stmt_bind_param($check, "s", $course_code);
+        $check = mysqli_prepare($conn, "SELECT course_id FROM course WHERE course_code = ? AND course_id != ?");
+        mysqli_stmt_bind_param($check, "si", $course_code, $id);
         mysqli_stmt_execute($check);
         mysqli_stmt_store_result($check);
         if (mysqli_stmt_num_rows($check) > 0) {
-            $errors[] = "Course code \"$course_code\" already exists.";
+            $errors[] = "Course code \"$course_code\" is already used by another course.";
         }
         mysqli_stmt_close($check);
     }
 
-    // INSERT
     if (empty($errors)) {
         $is_active = ($status === 'active') ? 1 : 0;
-
-        // NOTE: Add duration_weeks column to course table if not exists:
-        // ALTER TABLE course ADD COLUMN duration_weeks INT NULL;
         $stmt = mysqli_prepare($conn,
-            "INSERT INTO course (course_name, description, course_code, duration_weeks, is_active) VALUES (?, ?, ?, ?, ?)");
-        mysqli_stmt_bind_param($stmt, "sssii", $course_name, $description, $course_code, $duration_weeks, $is_active);
-
+            "UPDATE course SET course_name=?, description=?, course_code=?, duration_weeks=?, is_active=? WHERE course_id=?");
+        mysqli_stmt_bind_param($stmt, "sssiii", $course_name, $description, $course_code, $duration_weeks, $is_active, $id);
         if (mysqli_stmt_execute($stmt)) {
-            $success        = "Course \"$course_name\" added successfully!";
-            $course_name    = '';
-            $course_code    = '';
-            $description    = '';
-            $duration_weeks = '';
-            $status         = 'active';
+            $success = "Course updated successfully!";
         } else {
             $errors[] = 'Database error: ' . mysqli_error($conn);
         }
@@ -105,7 +109,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Add Course — Edu Team</title>
+    <title>Edit Course — Edu Team</title>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -124,7 +128,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             --white:      #ffffff;
             --bg:         #F0EBFF;
             --input-bg:   #F8F5FF;
-            --pale:       #EDE6FF;
         }
 
         body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);min-height:100vh;color:var(--text-dark)}
@@ -147,10 +150,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         .welcome-banner p{font-size:.78rem;color:var(--text-light);margin-top:2px}
 
         /* Page header */
-        .page-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.6rem}
+        .page-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.2rem}
         .page-header h1{font-size:1.75rem;font-weight:800;color:var(--text-dark)}
         .btn-back{display:inline-flex;align-items:center;gap:.4rem;padding:.5rem 1rem;border-radius:10px;background:white;border:1.5px solid var(--border);color:var(--text-mid);font-size:.85rem;text-decoration:none;font-weight:500;transition:border-color .2s,color .2s}
         .btn-back:hover{border-color:var(--purple);color:var(--purple)}
+
+        /* Info badges row */
+        .badges-row{display:flex;align-items:center;gap:10px;margin-bottom:1.6rem;flex-wrap:wrap}
+        .id-badge{display:inline-flex;align-items:center;gap:.4rem;background:rgba(108,63,197,0.08);border:1px solid rgba(108,63,197,0.20);color:var(--purple);border-radius:8px;padding:.3rem .75rem;font-size:.8rem;font-weight:600}
+        .enroll-badge{display:inline-flex;align-items:center;gap:.4rem;background:rgba(5,150,105,0.08);border:1px solid rgba(5,150,105,0.22);color:var(--green);border-radius:8px;padding:.3rem .75rem;font-size:.8rem;font-weight:600}
 
         /* Alerts */
         .alert{border-radius:12px;padding:1rem 1.25rem;margin-bottom:1.4rem;font-size:.9rem}
@@ -179,16 +187,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         .input-group input{padding-right:70px}
         .input-unit{position:absolute;right:12px;top:50%;transform:translateY(-50%);font-size:.78rem;font-weight:600;color:var(--text-light);pointer-events:none;background:var(--input-bg);padding:2px 6px;border-radius:4px}
 
+        /* Enrolled info box - read-only display */
+        .enrolled-info{background:rgba(5,150,105,0.06);border:1.5px solid rgba(5,150,105,0.20);border-radius:10px;padding:.72rem 1rem;font-size:.92rem;color:var(--green);font-weight:600;display:flex;align-items:center;gap:.5rem}
+
         /* Status toggle */
         .status-row{display:flex;gap:.75rem}
         .status-btn{flex:1;padding:.65rem;border-radius:10px;border:1.5px solid var(--border);background:var(--input-bg);color:var(--text-light);font-size:.88rem;font-family:inherit;cursor:pointer;transition:all .2s;text-align:center;user-select:none;font-weight:500}
         .status-btn.active-sel{border-color:var(--green);background:rgba(5,150,105,0.08);color:var(--green);font-weight:700}
         .status-btn.inactive-sel{border-color:var(--red);background:rgba(239,68,68,0.07);color:var(--red);font-weight:700}
 
-        /* Submit button */
-        .btn-submit{width:100%;padding:.88rem;background:linear-gradient(135deg,var(--purple),var(--purple-lt));color:white;border:none;border-radius:12px;font-size:1rem;font-weight:700;font-family:inherit;cursor:pointer;transition:opacity .2s,transform .1s;margin-top:.5rem;box-shadow:0 4px 16px rgba(108,63,197,0.25)}
+        /* Buttons */
+        .btn-row{display:flex;gap:.75rem;margin-top:.5rem}
+        .btn-submit{flex:1;padding:.85rem;background:linear-gradient(135deg,var(--purple),var(--purple-lt));color:white;border:none;border-radius:12px;font-size:1rem;font-weight:700;font-family:inherit;cursor:pointer;transition:opacity .2s,transform .1s;box-shadow:0 4px 14px rgba(108,63,197,0.22)}
         .btn-submit:hover{opacity:.9;transform:translateY(-1px)}
         .btn-submit:active{transform:scale(.98)}
+        .btn-cancel{padding:.85rem 1.5rem;border-radius:12px;background:white;border:1.5px solid var(--border);color:var(--text-mid);font-size:.95rem;font-weight:600;font-family:inherit;cursor:pointer;text-decoration:none;display:grid;place-items:center;transition:border-color .2s,color .2s}
+        .btn-cancel:hover{border-color:var(--red);color:var(--red)}
     </style>
 </head>
 <body>
@@ -210,13 +224,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <div class="avatar"><?= strtoupper(substr($teacher_name, 0, 1)) ?></div>
         <div>
             <h2>👋 Welcome, <span><?= htmlspecialchars($teacher_name) ?>!</span></h2>
-            <p>Add Course — Developer: Isha | SRS-86</p>
+            <p>Edit Course — Developer: Isha | SRS-86</p>
         </div>
     </div>
 
     <div class="page-header">
-        <h1>Add New Course</h1>
+        <h1>Edit Course</h1>
         <a href="course_list.php" class="btn-back">← Back to Courses</a>
+    </div>
+
+    <!-- Info badges: course ID + enrolled students count -->
+    <div class="badges-row">
+        <div class="id-badge">📘 Course ID: #<?= $id ?></div>
+        <div class="enroll-badge">
+            👥 <?= $enrolled_count ?> student<?= $enrolled_count !== 1 ? 's' : '' ?> enrolled
+        </div>
     </div>
 
     <?php if (!empty($errors)): ?>
@@ -246,7 +268,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <div class="form-group">
                 <label for="description">Course Description</label>
                 <textarea id="description" name="description"
-                          placeholder="e.g. This course covers the fundamentals of computer science including algorithms, data structures and programming."
+                          placeholder="e.g. This course covers the fundamentals of computer science..."
                           maxlength="500"><?= htmlspecialchars($description) ?></textarea>
                 <p class="hint">Optional. Max 500 characters.</p>
             </div>
@@ -270,7 +292,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                min="1" max="200">
                         <span class="input-unit">wks</span>
                     </div>
-                    <p class="hint">Optional. Enter number of weeks.</p>
+                    <p class="hint">Leave blank if not set.</p>
+                </div>
+            </div>
+
+            <!-- Enrolled Students - read-only info display -->
+            <div class="form-group">
+                <label>Enrolled Students</label>
+                <div class="enrolled-info">
+                    👥 <?= $enrolled_count ?> student<?= $enrolled_count !== 1 ? 's' : '' ?> currently enrolled in this course
                 </div>
             </div>
 
@@ -286,7 +316,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <input type="hidden" name="status" id="statusInput" value="<?= htmlspecialchars($status) ?>">
             </div>
 
-            <button type="submit" class="btn-submit">+ Add Course</button>
+            <div class="btn-row">
+                <button type="submit" class="btn-submit">💾 Save Changes</button>
+                <a href="course_list.php" class="btn-cancel">Cancel</a>
+            </div>
         </form>
     </div>
 </main>

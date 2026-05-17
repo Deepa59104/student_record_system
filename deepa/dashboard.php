@@ -1,115 +1,161 @@
 <?php
-// dashboard.php - Main Dashboard
-// Developer: Deepa Thapa | SRS-84
-// Project: Edu Team - Student Record System
+/**
+ * ============================================================
+ * FILE:        dashboard.php
+ * MODULE:      Student Profile Management
+ * DEVELOPER:   Deepa Thapa | SRS-84
+ * PROJECT:     Edu Team – Student Record System
+ * LAYER:       Presentation Layer
+ * DESCRIPTION: Main dashboard page showing all 5 modules.
+ *              Students card links to student_login.php
+ * ============================================================
+ */
 
+// MIDDLE LAYER: Start session
 session_start();
 
-// Redirect to login if not logged in
-if(!isset($_SESSION['teacher_id'])) {
-    header('Location: ../isha/login.php');
-    exit();
-}
-
-$teacher_name = $_SESSION['teacher_name'] ?? 'Teacher';
+$teacher_name = $_SESSION['teacher_name'] ?? '';
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Edu Team - Dashboard</title>
+    <title>Dashboard – Edu Team SRS</title>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Plus Jakarta Sans', sans-serif; background: #0f0a1e; min-height: 100vh; position: relative; overflow-x: hidden; }
-        .bg-orb1 { position: fixed; width: 600px; height: 600px; border-radius: 50%; background: radial-gradient(circle, rgba(124,58,237,0.25) 0%, transparent 70%); top: -200px; left: -150px; pointer-events: none; }
-        .bg-orb2 { position: fixed; width: 500px; height: 500px; border-radius: 50%; background: radial-gradient(circle, rgba(168,85,247,0.15) 0%, transparent 70%); bottom: -150px; right: -100px; pointer-events: none; }
-        .bg-orb3 { position: fixed; width: 400px; height: 400px; border-radius: 50%; background: radial-gradient(circle, rgba(59,130,246,0.1) 0%, transparent 70%); top: 50%; left: 50%; transform: translate(-50%, -50%); pointer-events: none; }
-        .navbar { position: sticky; top: 0; z-index: 100; padding: 0 40px; height: 62px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.06); background: rgba(15,10,30,0.85); backdrop-filter: blur(14px); }
-        .brand { display: flex; align-items: center; gap: 12px; text-decoration: none; }
-        .brand-logo { width: 40px; height: 40px; border-radius: 12px; background: linear-gradient(135deg, #7c3aed, #a855f7); display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 800; color: white; box-shadow: 0 4px 20px rgba(124,58,237,0.5); }
-        .brand-text { color: white; font-size: 15px; font-weight: 700; letter-spacing: -0.3px; }
-        .nav-links { display: flex; align-items: center; gap: 28px; }
-        .nav-links a { color: rgba(255,255,255,0.45); font-size: 13px; text-decoration: none; font-weight: 500; transition: color 0.2s; }
-        .nav-links a:hover { color: white; }
-        .nav-links a.active { color: #a855f7; }
-        .content { position: relative; z-index: 1; max-width: 1100px; margin: 0 auto; padding: 60px 32px; }
-        .page-header { margin-bottom: 52px; }
-        .page-title { font-size: 38px; font-weight: 800; color: white; letter-spacing: -1px; margin-bottom: 12px; line-height: 1.2; }
-        .page-title span { color: #a855f7; }
-        .page-sub { font-size: 15px; color: rgba(255,255,255,0.35); }
-        .modules-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
-        .module-card { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.07); border-radius: 20px; padding: 32px 24px; text-align: center; text-decoration: none; display: block; transition: all 0.3s ease; backdrop-filter: blur(10px); }
-        .module-card:hover { background: rgba(124,58,237,0.15); border-color: rgba(168,85,247,0.5); transform: translateY(-6px); box-shadow: 0 20px 40px rgba(124,58,237,0.2); }
-        .card-icon { width: 68px; height: 68px; border-radius: 18px; display: flex; align-items: center; justify-content: center; margin: 0 auto 18px; font-size: 30px; transition: transform 0.3s; }
-        .module-card:hover .card-icon { transform: scale(1.1); }
-        .icon-t { background: rgba(124,58,237,0.2); }
-        .icon-s { background: rgba(59,130,246,0.2); }
-        .icon-c { background: rgba(16,185,129,0.2); }
-        .icon-g { background: rgba(245,158,11,0.2); }
-        .icon-a { background: rgba(239,68,68,0.2); }
-        .card-name { font-size: 17px; font-weight: 600; color: white; margin-bottom: 8px; }
-        .card-desc { font-size: 13px; color: rgba(255,255,255,0.3); margin-bottom: 16px; }
-        .card-arrow { font-size: 18px; color: rgba(168,85,247,0.5); transition: all 0.3s; }
-        .module-card:hover .card-arrow { transform: translateX(6px); color: #a855f7; }
-        .bottom-row { display: flex; justify-content: center; gap: 20px; margin-top: 20px; }
-        .bottom-row .module-card { width: calc(33.333% - 10px); }
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background: #ffffff;
+            min-height: 100vh;
+            color: #1a0a2e;
+        }
+
+        /* ── Navbar ── */
+        .navbar {
+            height: 56px;
+            background: #3b1f6e;
+            display: flex;
+            align-items: center;
+            padding: 0 40px;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .nav-brand { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+        .nav-logo { width: 32px; height: 32px; border-radius: 50%; background: rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center; font-size: 16px; }
+        .nav-brand-text { color: #fff; font-size: 15px; font-weight: 700; }
+        .nav-center { color: rgba(255,255,255,0.7); font-size: 13px; font-weight: 500; position: absolute; left: 50%; transform: translateX(-50%); }
+        .nav-right { display: flex; align-items: center; gap: 24px; }
+        .nav-right a { color: rgba(255,255,255,0.7); font-size: 13px; font-weight: 500; text-decoration: none; }
+        .nav-right a:hover { color: white; }
+        .nav-right a.active { color: white; font-weight: 700; }
+        .nav-right a.danger { color: #f87171; }
+
+        /* ── Page ── */
+        .page { max-width: 1100px; margin: 0 auto; padding: 60px 32px; }
+
+        /* ── Header ── */
+        .header { text-align: center; margin-bottom: 52px; }
+        .header-icon { width: 72px; height: 72px; border-radius: 50%; background: #3b1f6e; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; font-size: 32px; }
+        .header-title { font-size: 36px; font-weight: 800; color: #2d1657; letter-spacing: -0.5px; margin-bottom: 8px; }
+        .header-sub { font-size: 14px; color: #9b8bb8; }
+
+        /* ── Cards ── */
+        .grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 20px; }
+        .grid-bottom { display: flex; justify-content: center; gap: 20px; margin-top: 20px; }
+        .grid-bottom .card { width: calc(33.333% - 10px); }
+
+        .card {
+            background: #fff; border: 1.5px solid #e2d9f3;
+            border-radius: 18px; padding: 36px 24px;
+            text-align: center; text-decoration: none; display: block;
+            transition: all .25s ease;
+        }
+        .card:hover {
+            background: #3b1f6e; border-color: #3b1f6e;
+            transform: translateY(-6px);
+            box-shadow: 0 20px 44px rgba(59,31,110,0.18);
+        }
+        .card:hover .card-name  { color: #ffffff; }
+        .card:hover .card-desc  { color: rgba(255,255,255,0.6); }
+        .card:hover .card-arrow { color: #ffffff; }
+        .card:hover .card-icon-wrap { background: rgba(255,255,255,0.12); }
+
+        .card-icon-wrap { width: 68px; height: 68px; border-radius: 18px; background: #f3effe; display: flex; align-items: center; justify-content: center; margin: 0 auto 18px; font-size: 32px; transition: background .25s; }
+        .card-name  { font-size: 16px; font-weight: 700; color: #3b1f6e; margin-bottom: 6px; transition: color .25s; }
+        .card-desc  { font-size: 13px; color: #9b8bb8; margin-bottom: 16px; transition: color .25s; }
+        .card-arrow { font-size: 18px; color: #3b1f6e; display: inline-block; transition: all .25s; }
+        .card:hover .card-arrow { transform: translateX(5px); }
     </style>
 </head>
 <body>
-    <div class="bg-orb1"></div>
-    <div class="bg-orb2"></div>
-    <div class="bg-orb3"></div>
-    <nav class="navbar">
-        <a class="brand" href="dashboard.php">
-            <div class="brand-logo">E</div>
-            <span class="brand-text">Edu Team – Student Record System</span>
-        </a>
-        <div class="nav-links">
-            <a href="dashboard.php" class="active">Dashboard</a>
-            <a href="../isha/logout.php">Logout</a>
-        </div>
-    </nav>
-    <div class="content">
-        <div class="page-header">
-            <h1 class="page-title">Welcome to <span>Edu Team</span></h1>
-            <p class="page-sub">Select a module below to manage your records</p>
-        </div>
-        <div class="modules-grid">
-            <a href="../sita/teacher_list.php" class="module-card">
-                <div class="card-icon icon-t">👨‍🏫</div>
-                <p class="card-name">Teachers</p>
-                <p class="card-desc">Manage teacher records</p>
-                <div class="card-arrow">→</div>
-            </a>
-            <a href="student_list.php" class="module-card">
-                <div class="card-icon icon-s">👨‍🎓</div>
-                <p class="card-name">Students</p>
-                <p class="card-desc">Manage student profiles</p>
-                <div class="card-arrow">→</div>
-            </a>
-            <a href="../isha/course_list.php" class="module-card">
-                <div class="card-icon icon-c">📚</div>
-                <p class="card-name">Courses</p>
-                <p class="card-desc">Manage course records</p>
-                <div class="card-arrow">→</div>
-            </a>
-        </div>
-        <div class="bottom-row">
-            <a href="../binu/grade_list.php" class="module-card">
-                <div class="card-icon icon-g">📝</div>
-                <p class="card-name">Grades</p>
-                <p class="card-desc">Track student results</p>
-                <div class="card-arrow">→</div>
-            </a>
-            <a href="../satinder/attendance_list.php" class="module-card">
-                <div class="card-icon icon-a">📅</div>
-                <p class="card-name">Attendance</p>
-                <p class="card-desc">Monitor attendance records</p>
-                <div class="card-arrow">→</div>
-            </a>
-        </div>
+
+<!-- Navbar -->
+<nav class="navbar">
+    <a class="nav-brand" href="dashboard.php">
+        <div class="nav-logo">🎓</div>
+        <span class="nav-brand-text">EduTeam</span>
+    </a>
+    <span class="nav-center">Student Record System</span>
+    <div class="nav-right">
+        <a href="dashboard.php" class="active">Dashboard</a>
+        <?php if (
+            isset($_SESSION['teacher_id']) ||
+            isset($_SESSION['student_teacher_id']) ||
+            isset($_SESSION['student_logged_in'])
+        ): ?>
+            <a href="../isha/logout.php" class="danger">Logout</a>
+        <?php endif; ?>
     </div>
+</nav>
+
+<div class="page">
+    <div class="header">
+        <div class="header-icon">🎓</div>
+        <h1 class="header-title">Welcome to EduTeam</h1>
+        <p class="header-sub">Select a module below to manage your records</p>
+    </div>
+
+    <div class="grid">
+        <a href="../sita/teacher_list.php" class="card">
+            <div class="card-icon-wrap">👨‍🏫</div>
+            <p class="card-name">Teachers</p>
+            <p class="card-desc">Manage teacher records</p>
+            <span class="card-arrow">→</span>
+        </a>
+        <a href="student_login.php" class="card">
+            <div class="card-icon-wrap">👨‍🎓</div>
+            <p class="card-name">Students</p>
+            <p class="card-desc">Manage student profiles</p>
+            <span class="card-arrow">→</span>
+        </a>
+        <a href="../isha/course_list.php" class="card">
+            <div class="card-icon-wrap">📚</div>
+            <p class="card-name">Courses</p>
+            <p class="card-desc">Manage course records</p>
+            <span class="card-arrow">→</span>
+        </a>
+    </div>
+
+    <div class="grid-bottom">
+        <a href="../binu/grades/grade_list.php" class="card">
+            <div class="card-icon-wrap">📝</div>
+            <p class="card-name">Grades</p>
+            <p class="card-desc">Track student results</p>
+            <span class="card-arrow">→</span>
+        </a>
+        <a href="../satinder/attendance_list.php" class="card">
+            <div class="card-icon-wrap">📅</div>
+            <p class="card-name">Attendance</p>
+            <p class="card-desc">Monitor attendance records</p>
+            <span class="card-arrow">→</span>
+        </a>
+    </div>
+</div>
+
 </body>
 </html>
